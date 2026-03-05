@@ -1,0 +1,238 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Sessions ──────────────────────────────────────
+
+model Session {
+  id             String         @id @default(cuid())
+  industry       Industry
+  currentState   WorkflowState  @default(CONSENT)
+  consentGiven   Boolean        @default(false)
+  consentAt      DateTime?
+
+  // Lead scoring
+  score          Int?
+  scoreLabel     ScoreLabel?
+  scoreReasons   String[]
+
+  // Extracted lead data (flexible JSONB)
+  leadFields     Json           @default("{}")
+
+  // Routing
+  routeDecision  RouteDecision?
+
+  // Session lifecycle
+  outcome        SessionOutcome?
+  durationMs     Int?
+  errorCount     Int            @default(0)
+  completedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  messages       Message[]
+  events         Event[]
+  tickets        Ticket[]
+  crmRecords     CRMRecord[]
+  followUpJobs   FollowUpJob[]
+
+  @@index([industry])
+  @@index([currentState])
+  @@index([createdAt])
+  @@index([scoreLabel])
+}
+
+// ─── Messages ──────────────────────────────────────
+
+model Message {
+  id         String      @id @default(cuid())
+  sessionId  String
+  session    Session     @relation(fields: [sessionId], references: [id])
+  role       MessageRole
+  content    String
+  source     MessageSource @default(TEXT)
+  metadata   Json        @default("{}")
+  createdAt  DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+// ─── Events (Audit Log) ───────────────────────────
+
+model Event {
+  id          String   @id @default(cuid())
+  sessionId   String
+  session     Session  @relation(fields: [sessionId], references: [id])
+  type        String   // e.g., "session_created", "field_extracted"
+  description String
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now())
+
+  // Append-only: no updatedAt, no soft-delete
+  @@index([sessionId, createdAt])
+  @@index([type])
+}
+
+// ─── Tickets ──────────────────────────────────────
+
+model Ticket {
+  id          String       @id @default(cuid())
+  sessionId   String
+  session     Session      @relation(fields: [sessionId], references: [id])
+  title       String
+  type        TicketType
+  description String       @default("")
+  priority    Priority     @default(MEDIUM)
+  status      TicketStatus @default(CREATED)
+  assignee    String?
+  metadata    Json         @default("{}")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([sessionId])
+  @@index([status])
+}
+
+// ─── CRM Records ─────────────────────────────────
+
+model CRMRecord {
+  id          String    @id @default(cuid())
+  sessionId   String
+  session     Session   @relation(fields: [sessionId], references: [id])
+  externalId  String?   // HubSpot/Salesforce record ID
+  provider    String    @default("mock")
+  status      String    @default("created")
+  fields      Json      @default("{}")
+  syncedAt    DateTime?
+  metadata    Json      @default("{}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([sessionId])
+  @@index([externalId])
+}
+
+// ─── Follow-Up Jobs ──────────────────────────────
+
+model FollowUpJob {
+  id          String        @id @default(cuid())
+  sessionId   String
+  session     Session       @relation(fields: [sessionId], references: [id])
+  type        String        // "friendly_ping", "value_add", "close_loop"
+  day         Int           // Day 1, 3, 7
+  description String
+  status      JobStatus     @default(SCHEDULED)
+  executeAt   DateTime
+  executedAt  DateTime?
+  payload     Json          @default("{}")
+  error       String?
+  retryCount  Int           @default(0)
+  createdAt   DateTime      @default(now())
+
+  @@index([status, executeAt])
+  @@index([sessionId])
+}
+
+// ─── Idempotency Keys ────────────────────────────
+
+model IdempotencyKey {
+  key        String   @id
+  result     Json
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  @@index([expiresAt])
+}
+
+// ─── Enums ───────────────────────────────────────
+
+enum Industry {
+  SAAS
+  REAL_ESTATE
+  HEALTHCARE
+  ECOMMERCE
+  CONSULTING
+}
+
+enum WorkflowState {
+  CONSENT
+  OPENING
+  QUALIFY_LOOP
+  SCORE
+  ROUTE
+  ACTIONS
+  FOLLOWUP_SCHEDULED
+  COMPLETED
+  ERROR
+}
+
+enum ScoreLabel {
+  COLD
+  WARM
+  HOT
+}
+
+enum RouteDecision {
+  HOT
+  WARM
+  COLD
+  RISK
+}
+
+enum SessionOutcome {
+  MEETING_BOOKED
+  NURTURE
+  HANDOFF
+  DECLINED
+  ABANDONED
+  ERROR
+}
+
+enum MessageRole {
+  USER
+  AGENT
+  SYSTEM
+}
+
+enum MessageSource {
+  TEXT
+  VOICE
+}
+
+enum TicketType {
+  STAKEHOLDER_INVITE
+  RISK_REVIEW
+  HANDOFF
+  FOLLOWUP
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketStatus {
+  CREATED
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
+}
+
+enum JobStatus {
+  SCHEDULED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}

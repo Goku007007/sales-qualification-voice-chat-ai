@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@layer base {
+  :root {
+    /* Background layers */
+    --bg-base: 222 47% 6%;
+    --bg-card: 217 33% 12%;
+    --bg-card-hover: 217 33% 15%;
+    --bg-elevated: 217 33% 17%;
+
+    /* Glassmorphism */
+    --glass-bg: rgba(15, 23, 42, 0.6);
+    --glass-border: rgba(148, 163, 184, 0.1);
+    --glass-blur: 12px;
+
+    /* Text */
+    --text-primary: 210 40% 98%;
+    --text-secondary: 215 20% 65%;
+    --text-muted: 217 15% 45%;
+
+    /* Accent colors */
+    --accent-blue: 217 91% 60%;
+    --accent-green: 142 71% 45%;
+    --accent-red: 0 72% 50%;
+    --accent-amber: 38 92% 50%;
+    --accent-violet: 263 70% 60%;
+
+    /* Industry colors */
+    --industry-saas: #6366f1;
+    --industry-realestate: #10b981;
+    --industry-healthcare: #ef4444;
+    --industry-ecommerce: #f59e0b;
+    --industry-consulting: #8b5cf6;
+
+    /* Score gauge */
+    --gauge-cold: 0 80% 50%;
+    --gauge-warm: 48 96% 53%;
+    --gauge-hot: 142 71% 45%;
+
+    /* Chat bubbles */
+    --bubble-agent: 217 60% 18%;
+    --bubble-user: 215 25% 30%;
+
+    /* shadcn/ui overrides */
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 217 33% 12%;
+    --card-foreground: 210 40% 98%;
+    --popover: 217 33% 12%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 15% 20%;
+    --input: 217 15% 20%;
+    --ring: 217 91% 60%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family:
+      'Inter',
+      system-ui,
+      -apple-system,
+      sans-serif;
+  }
+
+  code,
+  pre {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+}
+
+/* Glassmorphism card utility */
+@layer components {
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--text-muted));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--text-secondary));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
